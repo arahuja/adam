@@ -17,7 +17,7 @@ package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.{_}
 import edu.berkeley.cs.amplab.adam.util.MdTag
 
 object RichADAMRecord {
@@ -105,7 +105,7 @@ class RichADAMRecord(record: ADAMRecord) {
   }
 
   lazy val mdEvent: Option[MdTag] = if (record.getMismatchingPositions != null) {
-    Some(MdTag(record.getMismatchingPositions, record.getStart))
+    Some(MdTag(record.getMismatchingPositions.toString, record.getStart))
   } else {
     None
   }
