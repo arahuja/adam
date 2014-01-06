@@ -23,15 +23,16 @@ import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.models.SnpTable
 import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import org.apache.spark.rdd.RDD
+import net.sf.picard.reference.{ReferenceSequence, ReferenceSequenceFile, IndexedFastaSequenceFile, FastaSequenceFile}
+import edu.berkeley.cs.amplab.adam.rich.ReferenceSequenceMap
 
 private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
 
   def usableRead(read: RichADAMRecord): Boolean = {
-    // todo -- the mismatchingPositions should not merely be a filter, it should result in an exception. These are required for calculating mismatches.
-    read.getReadMapped && read.getPrimaryAlignment && !read.getDuplicateRead && (read.getMismatchingPositions != null)
+    read.getReadMapped && read.getPrimaryAlignment && !read.getDuplicateRead
   }
 
-  def apply(poorRdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[SnpTable]): RDD[ADAMRecord] = {
+  def apply(poorRdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[SnpTable], reference: SparkBroadcast[Option[ReferenceSequenceMap]]): RDD[ADAMRecord] = {
     val rdd = poorRdd.map(new RichADAMRecord(_))
     // initialize the covariates
     println("Instantiating covariates...")
@@ -40,7 +41,7 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
     println("Creating object...")
     val recalibrator = new RecalibrateBaseQualities(qualByRG, otherCovars)
     println("Computing table...")
-    val table = recalibrator.computeTable(rdd.filter(usableRead), dbsnp)
+    val table = recalibrator.computeTable(rdd.filter(usableRead), dbsnp, reference)
     println("Applying table...")
     recalibrator.applyTable(table, rdd, qualByRG, otherCovars)
   }
@@ -49,7 +50,7 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
 private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars: List[StandardCovariate]) extends Serializable with Logging {
   initLogging()
 
-  def computeTable(rdd: RDD[RichADAMRecord], dbsnp: SparkBroadcast[SnpTable]): RecalTable = {
+  def computeTable(rdd: RDD[RichADAMRecord], dbsnp: SparkBroadcast[SnpTable], reference: SparkBroadcast[Option[ReferenceSequenceMap]]): RecalTable = {
 
     def addCovariates(table: RecalTable, covar: ReadCovariates): RecalTable = {
       //log.info("Aggregating covarates for read "+covar.read.record.getReadName.toString)
@@ -61,7 +62,8 @@ private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars:
       table1 ++ table2
     }
 
-    rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp.value)).aggregate(new RecalTable)(addCovariates, mergeTables)
+   rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp, reference.value.flatMap(_.getReferenceSubSequence(r)) )).aggregate(new RecalTable)(addCovariates, mergeTables)
+
   }
 
   def applyTable(table: RecalTable, rdd: RDD[RichADAMRecord], qualCovar: QualByRG, covars: List[StandardCovariate]): RDD[ADAMRecord] = {

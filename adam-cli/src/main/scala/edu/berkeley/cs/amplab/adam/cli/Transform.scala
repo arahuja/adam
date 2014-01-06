@@ -25,6 +25,9 @@ import org.apache.spark.{SparkContext, Logging}
 import org.apache.spark.rdd.RDD
 import java.io.File
 import java.util.logging.Level
+import net.sf.picard.fastq.FastqReader
+import net.sf.picard.reference.{IndexedFastaSequenceFile, FastaSequenceFile}
+import edu.berkeley.cs.amplab.adam.rich.ReferenceSequenceMap
 
 object Transform extends AdamCommandCompanion {
   val commandName = "transform"
@@ -48,6 +51,9 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var recalibrateBaseQualities: Boolean = false
   @Args4jOption(required = false, name = "-dbsnp_sites", usage = "dbsnp sites file")
   var dbsnpSitesFile: String = null
+  @Args4jOption(required = false, name = "-reference", usage = "reference file")
+  var referenceFile: File = null
+
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
 }
@@ -76,7 +82,7 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
       val dbSNP = loadSnpTable(sc)
-      adamRecords = adamRecords.adamBQSR(dbSNP)
+      adamRecords = adamRecords.adamBQSR(dbSNP, Option(args.referenceFile))
     }
 
     // NOTE: For now, sorting needs to be the last transform

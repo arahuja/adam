@@ -19,6 +19,7 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
 import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.util.MdTag
+import net.sf.picard.reference.ReferenceSequence
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -128,14 +129,38 @@ class RichADAMRecord(val record: ADAMRecord) {
     }
   }
 
+
+  def isMismatchAtReadOffset(offset: Int, reference: Option[ReferenceSequence]): Option[Boolean] = {
+    // careful about offsets that are within an insertion!
+    reference match
+    {
+      case Some(reference) => getReferencePosFromOffset(offset).flatMap(pos => isMismatchFromReference(offset, pos, reference))
+      case None => isMismatchAtReadOffset(offset)
+  }
+
+  }
+
   // Does this read mismatch the reference at the given offset within the read?
   def isMismatchAtReadOffset(offset: Int): Option[Boolean] = {
     // careful about offsets that are within an insertion!
+    getReferencePosFromOffset(offset).flatMap(isMismatchAtReferencePosition(_))
+  }
+
+
+  def getReferencePosFromOffset(offset: Int): Option[Long] = {
     if (referencePositions.isEmpty) {
       None
     } else {
       readOffsetToReferencePosition(offset).flatMap(isMismatchAtReferencePosition)
+      referencePositions(offset)
     }
+  }
+
+  def isMismatchFromReference(offset:Int, pos:Long, reference: ReferenceSequence): Option[Boolean] = {
+    if (!overlapsReferencePosition(pos).get)
+       None
+    else
+      Some(!(record.getSequence.charAt(offset) == reference.getBases()(pos.toInt)))
   }
 
   lazy val referencePositions: Seq[Option[Long]] = {
@@ -155,6 +180,7 @@ class RichADAMRecord(val record: ADAMRecord) {
           }
           case CigarOperator.H => {
             runningPos /* do nothing */
+          //  (posAtCigar + elem.getLength, basePositions)
           }
           case CigarOperator.D |
                CigarOperator.P |

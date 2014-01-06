@@ -33,6 +33,8 @@ import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
 import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import java.util.logging.Level
+import net.sf.picard.reference.{ReferenceSequenceFile, IndexedFastaSequenceFile, FastaSequenceFile}
+import edu.berkeley.cs.amplab.adam.rich.ReferenceSequenceMap
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -103,9 +105,13 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     MarkDuplicates(rdd)
   }
 
-  def adamBQSR(dbSNP: SnpTable): RDD[ADAMRecord] = {
+  def adamBQSR(dbSNP: SnpTable, referenceFile: Option[File]): RDD[ADAMRecord] = {
+
     val broadcastDbSNP = rdd.context.broadcast(dbSNP)
-    RecalibrateBaseQualities(rdd, broadcastDbSNP)
+    val reference = referenceFile.map(file => ReferenceSequenceMap(new IndexedFastaSequenceFile(file)))
+    val broadcastReference = rdd.context.broadcast(reference)
+    RecalibrateBaseQualities(rdd, broadcastDbSNP, broadcastReference)
+
   }
 
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)

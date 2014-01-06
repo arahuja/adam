@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.rich
 import org.scalatest.FunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import RichADAMRecord._
+import net.sf.picard.reference.ReferenceSequence
 
 class RichADAMRecordSuite extends FunSuite {
 
@@ -71,7 +72,6 @@ class RichADAMRecordSuite extends FunSuite {
     val softClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(100).setCigar("10S90M").build()
     assert( softClippedRead.referencePositions(0) == Some(90L))
 
-
   }
 
   test("Reference Positions") {
@@ -114,6 +114,22 @@ class RichADAMRecordSuite extends FunSuite {
     assert( hg00096read.referencePositions(62)  == Some(1061L) )
     assert( hg00096read.referencePositions(78)  == Some(1078L) )
     assert( hg00096read.referencePositions(99)  == Some(1099L) )
+
+  }
+
+  test("Mismatch Reference Sequence") {
+
+    val reference = new ReferenceSequence("1", 1, (Range(0,100).map(x => 'N'.toByte) ++ List('A', 'A', 'G', 'C', 'T').map(_.toByte)).toArray)
+    val perfectAlignedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(100).setCigar("5M").setSequence("ACGCT").build()
+    assert(perfectAlignedRead.isMismatchAtReadOffset(0, Some(reference)).get == false)
+    assert(perfectAlignedRead.isMismatchAtReadOffset(1, Some(reference)).get == true)
+    assert(perfectAlignedRead.isMismatchAtReadOffset(2, Some(reference)).get == false)
+
+    val insertAlignedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(100).setCigar("3M1I2M").setSequence("ACGCT").build()
+    assert(insertAlignedRead.isMismatchAtReadOffset(0, Some(reference)).get == false)
+    assert(insertAlignedRead.isMismatchAtReadOffset(1, Some(reference)).get == true)
+    assert(insertAlignedRead.isMismatchAtReadOffset(2, Some(reference)).get == false)
+    assert(insertAlignedRead.isMismatchAtReadOffset(3, Some(reference)) == None)
 
   }
 
