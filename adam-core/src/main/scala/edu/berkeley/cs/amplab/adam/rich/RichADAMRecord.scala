@@ -131,28 +131,21 @@ class RichADAMRecord(val record: ADAMRecord) {
 
 
   def isMismatchAtReadOffset(offset: Int, reference: Option[ReferenceSequence]): Option[Boolean] = {
-    // careful about offsets that are within an insertion!
     reference match
     {
-      case Some(reference) => getReferencePosFromOffset(offset).flatMap(pos => isMismatchFromReference(offset, pos, reference))
+      case Some(reference) => readOffsetToReferencePosition(offset).flatMap(pos => isMismatchFromReference(offset, pos, reference))
       case None => isMismatchAtReadOffset(offset)
-  }
+    }
 
   }
 
   // Does this read mismatch the reference at the given offset within the read?
   def isMismatchAtReadOffset(offset: Int): Option[Boolean] = {
     // careful about offsets that are within an insertion!
-    getReferencePosFromOffset(offset).flatMap(isMismatchAtReferencePosition(_))
-  }
-
-
-  def getReferencePosFromOffset(offset: Int): Option[Long] = {
     if (referencePositions.isEmpty) {
       None
     } else {
       readOffsetToReferencePosition(offset).flatMap(isMismatchAtReferencePosition)
-      referencePositions(offset)
     }
   }
 
@@ -180,7 +173,6 @@ class RichADAMRecord(val record: ADAMRecord) {
           }
           case CigarOperator.H => {
             runningPos /* do nothing */
-          //  (posAtCigar + elem.getLength, basePositions)
           }
           case CigarOperator.D |
                CigarOperator.P |

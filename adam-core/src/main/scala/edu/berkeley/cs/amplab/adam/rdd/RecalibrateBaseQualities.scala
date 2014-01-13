@@ -62,7 +62,7 @@ private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars:
       table1 ++ table2
     }
 
-   rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp, reference.value.flatMap(_.getReferenceSubSequence(r)) )).aggregate(new RecalTable)(addCovariates, mergeTables)
+   rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp.value, reference.value.flatMap(_.getReferenceSubSequence(r)) )).aggregate(new RecalTable)(addCovariates, mergeTables)
 
   }
 

@@ -24,7 +24,7 @@ import net.sf.picard.reference.{ReferenceSequence}
 
 object ReadCovariates {
   def apply(rec: RichADAMRecord, qualRG: QualByRG, covars: List[StandardCovariate],
-            dbsnp: SparkBroadcast[SnpTable] = null,
+            dbsnp: SnpTable = SnpTable(),
             reference: Option[ReferenceSequence] = None) : ReadCovariates = {
     new ReadCovariates(rec, qualRG, covars, dbsnp, reference)
   }
@@ -47,10 +47,9 @@ class ReadCovariates(val read: RichADAMRecord, qualByRG: QualByRG, covars: List[
     val offset = (iter_position - startOffset).toInt
     val mismatch = read.isMismatchAtReadOffset(offset, reference)
     // FIXME: why does empty mismatch mean it should be masked?
-    val isMasked = dbSNP.value.isMaskedAtReadOffset(read, offset) || mismatch.isEmpty
+    val isMasked = dbSNP.isMaskedAtReadOffset(read, offset) || mismatch.isEmpty
     // getOrElse because reads without an MD tag can appear during *application* of recal table
     val isMismatch = mismatch.getOrElse(false)
-    val idx = (iter_position - startOffset).toInt
     iter_position += 1
     new BaseCovariates(qualCovar(offset), requestedCovars.map(v => v(offset)).toArray,
       read.qualityScores(offset), isMismatch, isMasked)
