@@ -31,7 +31,7 @@ object ReadCovariates {
 }
 
 class ReadCovariates(val read: RichADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate],
-                     val dbSNP: SparkBroadcast[SnpTable] = null,
+                     val dbSNP: SnpTable = SnpTable(),
                      val reference: Option[ReferenceSequence] = None) extends Iterator[BaseCovariates] with Serializable {
 
   val startOffset = read.qualityScores.takeWhile(_ <= 2).size

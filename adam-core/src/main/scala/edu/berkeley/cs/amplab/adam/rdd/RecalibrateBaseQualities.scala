@@ -32,7 +32,7 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
     read.getReadMapped && read.getPrimaryAlignment && !read.getDuplicateRead
   }
 
-  def apply(poorRdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[SnpTable], reference: SparkBroadcast[Option[ReferenceSequenceMap]]): RDD[ADAMRecord] = {
+  def apply(poorRdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[SnpTable], reference: SparkBroadcast[Option[Map[String, ReferenceSequence]]]): RDD[ADAMRecord] = {
     val rdd = poorRdd.map(new RichADAMRecord(_))
     // initialize the covariates
     println("Instantiating covariates...")
@@ -50,7 +50,7 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
 private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars: List[StandardCovariate]) extends Serializable with Logging {
   initLogging()
 
-  def computeTable(rdd: RDD[RichADAMRecord], dbsnp: SparkBroadcast[SnpTable], reference: SparkBroadcast[Option[ReferenceSequenceMap]]): RecalTable = {
+  def computeTable(rdd: RDD[RichADAMRecord], dbsnp: SparkBroadcast[SnpTable], reference: SparkBroadcast[Option[Map[String, ReferenceSequence]]]): RecalTable = {
 
     def addCovariates(table: RecalTable, covar: ReadCovariates): RecalTable = {
       //log.info("Aggregating covarates for read "+covar.read.record.getReadName.toString)
@@ -62,7 +62,7 @@ private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars:
       table1 ++ table2
     }
 
-   rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp.value, reference.value.flatMap(_.getReferenceSubSequence(r)) )).aggregate(new RecalTable)(addCovariates, mergeTables)
+   rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp.value, reference.value.flatMap(_.get(r.getReferenceName.toString)) )).aggregate(new RecalTable)(addCovariates, mergeTables)
 
   }
 

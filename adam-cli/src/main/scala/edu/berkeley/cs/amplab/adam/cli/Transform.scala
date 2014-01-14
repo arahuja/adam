@@ -56,6 +56,8 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
 
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
+  @Args4jOption(required = false, name = "-minPartitions", usage = "Set the number of minimum partitions to process")
+  var minPartitions: String = System.getProperty("spark.default.parallelism")
 }
 
 class Transform(protected val args: TransformArgs) extends AdamSparkCommand[TransformArgs] with Logging {
@@ -68,7 +70,11 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
     // Quiet Parquet...
     ParquetLogger.hadoopLoggerLevel(Level.WARNING)
 
+
+
     var adamRecords: RDD[ADAMRecord] = sc.adamLoad(args.inputPath)
+    println(args.minPartitions)
+    adamRecords.coalesce(args.minPartitions.toInt, true);
     if (args.coalesce != -1) {
       log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
       adamRecords = adamRecords.coalesce(args.coalesce, shuffle = true)

@@ -14,13 +14,11 @@ object ReferenceSequenceMap {
 
 class ReferenceSequenceMap(val referenceFile : ReferenceSequenceFile) extends Serializable {
 
-  private val referenceMap = ReferenceSequenceIterator(referenceFile).map( reference => (reference.getName, reference )).toMap
-
+  val referenceMap = (ReferenceSequenceIterator(referenceFile).map( reference => (reference.getName, reference ))).toMap
 
   def getReferenceSubSequence(read : RichADAMRecord) : Option[ReferenceSequence] = {
     referenceMap.get(read.getReferenceName.toString)
   }
-
 }
 
 object ReferenceSequenceIterator {

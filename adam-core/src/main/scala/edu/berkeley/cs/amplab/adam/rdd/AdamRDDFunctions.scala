@@ -109,7 +109,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
     val broadcastDbSNP = rdd.context.broadcast(dbSNP)
     val reference = referenceFile.map(file => ReferenceSequenceMap(new IndexedFastaSequenceFile(file)))
-    val broadcastReference = rdd.context.broadcast(reference)
+    val broadcastReference = rdd.context.broadcast(reference.map(x => x.referenceMap))
     RecalibrateBaseQualities(rdd, broadcastDbSNP, broadcastReference)
 
   }
