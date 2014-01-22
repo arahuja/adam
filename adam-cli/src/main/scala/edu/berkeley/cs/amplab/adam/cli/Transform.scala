@@ -20,11 +20,12 @@ import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.models.SnpTable
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SnpTable}
 import org.apache.spark.{SparkContext, Logging}
 import org.apache.spark.rdd.RDD
 import java.io.File
 import java.util.logging.Level
+import edu.berkeley.cs.amplab.adam.projections.{ADAMVariantField, ADAMRecordField, Projection}
 
 object Transform extends AdamCommandCompanion {
   val commandName = "transform"
@@ -44,9 +45,9 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var sortReads: Boolean = false
   @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
   var markDuplicates: Boolean = false
-  @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
+  @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)", depends=Array("-known_variants"))
   var recalibrateBaseQualities: Boolean = false
-  @Args4jOption(required = false, name = "-dbsnp_sites", usage = "dbsnp sites file")
+  @Args4jOption(required = false, name = "-known_variants", usage = "vcf file or dbsnp sites file")
   var dbsnpSitesFile: String = null
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
@@ -58,6 +59,7 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
   initLogging()
 
   def run(sc: SparkContext, job: Job) {
+    System.setProperty("spark.kryoserializer.buffer.mb","128")
 
     // Quiet Parquet...
     ParquetLogger.hadoopLoggerLevel(Level.WARNING)
@@ -75,6 +77,7 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
 
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
+
       val dbSNP = loadSnpTable(sc)
       adamRecords = adamRecords.adamBQSR(dbSNP)
     }
@@ -89,12 +92,18 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
       compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
   }
 
-  // FIXME: why doesn't this complain if the file doesn't exist?
   def loadSnpTable(sc: SparkContext): SnpTable = {
     if(args.dbsnpSitesFile != null) {
       log.info("Loading SNP table")
-      //SnpTable(sc.textFile(args.dbsnpSitesFile))
-      SnpTable(new File(args.dbsnpSitesFile))
+      if (args.dbsnpSitesFile.endsWith(".vcf") || args.dbsnpSitesFile.endsWith(".bcf")) {
+        val projection = Projection(ADAMVariantField.position, ADAMVariantField.referenceAllele)
+        val adamVC: RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.dbsnpSitesFile, variantProjection = Some(projection) )
+        SnpTable(adamVC)
+      }
+      else
+      {
+        SnpTable(new File(args.dbsnpSitesFile))
+      }
     } else {
       SnpTable()
     }
