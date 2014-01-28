@@ -87,6 +87,14 @@ case class BaseContext(size: Int = 2) extends StandardCovariate {
     if (bases.indexOf(N_BASE) > -1) 0 else 1 + bases.map(BASES.indexOf(_)).reduceLeft(_ * 4 + _)
   }
 
+  def encodeBase(base : Byte) : Int = {
+    if (base == N_BASE) 0 else BASES.indexOf(base)
+  }
+
+  def encodeContext( bases : Array[Int]) : Int = {
+    if (bases.indexOf(0) > -1) 0 else 1 + bases.reduceLeft(_ * 4 + _)
+  }
+
   def decode(bases: Int): String = {
     if (bases == 0) {
       "N" * size
