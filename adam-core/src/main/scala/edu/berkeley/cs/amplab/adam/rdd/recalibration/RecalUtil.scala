@@ -28,15 +28,13 @@ object RecalUtil extends Serializable {
     val MAX_NUMBER_OF_OBSERVATIONS = Int.MaxValue
   }
 
-  def recalibrate(read: RichADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate], table: RecalTable): ADAMRecord = {
-    // get the covariates
-    val readCovariates = ReadCovariates(read, qualByRG, covars)
+  def recalibrate(readCovariates: ReadCovariates, table: RecalTable): ADAMRecord = {
     val toQual = PhredUtils.errorProbabilityToPhred( _ )
     val toErr = PhredUtils.phredToErrorProbability( _ )
     val newQuals = readCovariates.map(b => {
       toQual(table.getErrorRateShifts(b).foldLeft(toErr(b.qual))(_ + _))
     }).toArray
-    val builder = ADAMRecord.newBuilder(read)
+    val builder = ADAMRecord.newBuilder(readCovariates.record)
     builder.setQual(newQuals.foldLeft("")((a, b) => a + (b + 33).toChar.toString))
     builder.build()
   }

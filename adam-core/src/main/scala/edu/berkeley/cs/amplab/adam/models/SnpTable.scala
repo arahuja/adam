@@ -21,6 +21,15 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
         false
     }
   }
+
+  def isMaskedAtReferencePositon(read: ADAMRecord, position: Option[Long]): Boolean = {
+    try {
+      position.isEmpty || table(read.getReferenceName.toString).contains(position.get)
+    } catch {
+      case e: java.util.NoSuchElementException =>
+        false
+    }
+  }
 }
 
 object SnpTable {

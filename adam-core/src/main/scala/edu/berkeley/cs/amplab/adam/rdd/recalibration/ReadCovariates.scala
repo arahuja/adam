@@ -19,6 +19,7 @@ import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.models.SnpTable
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 
 object ReadCovariates {
   def apply(rec: RichADAMRecord, qualRG: QualByRG, covars: List[StandardCovariate],
@@ -27,33 +28,41 @@ object ReadCovariates {
   }
 }
 
-class ReadCovariates(val read: RichADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate],
-                     val dbSNP: SnpTable, val minQuality:Int = 2) extends Iterator[BaseCovariates] with Serializable {
+class ReadCovariates(val read: ADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate],
+                     val dbSNP: SnpTable, val minQuality:Int = 2)
+                    extends RichADAMRecord(read) with Iterator[BaseCovariates] with Serializable {
 
   def isLowQualityBase(qual : Byte) : Boolean = {
     qual.toInt <=  minQuality
   }
 
-  val qualityStartOffset = read.qualityScores.takeWhile(isLowQualityBase).size
-  val qualityEndOffset = read.qualityScores.size - read.qualityScores.reverseIterator.takeWhile(isLowQualityBase).size
+  def QualByRG(start: Int, end: Int): Array[Int] = {
+    val rg_offset = RecalUtil.Constants.MAX_REASONABLE_QSCORE * read.getRecordGroupId
+    qualityScores.slice(start, end).map(_.toInt + rg_offset)
+  }
+
+  val qualityStartOffset = qualityScores.takeWhile(isLowQualityBase).size
+  val qualityEndOffset = qualityScores.size - qualityScores.reverseIterator.takeWhile(isLowQualityBase).size
 
 
-  val qualCovar: Array[Int] = qualByRG(read, qualityStartOffset, qualityEndOffset)
-  val requestedCovars: List[Array[Int]] = covars.map(covar => covar(read, qualityStartOffset, qualityEndOffset))
+  lazy val qualCovar: Array[Int] = QualByRG(qualityStartOffset, qualityEndOffset)
+  lazy val requestedCovars: List[Array[Int]] = covars.map(covar => covar(this, qualityStartOffset, qualityEndOffset))
 
   var readOffset = qualityStartOffset
+
+  lazy val masked = Range(qualityStartOffset, qualityEndOffset).map( offset => dbSNP.isMaskedAtReadOffset(read, offset))
 
 
   override def hasNext: Boolean = readOffset < qualityEndOffset
 
   override def next(): BaseCovariates = {
     val baseCovarOffset = readOffset - qualityStartOffset
-    val mismatch = read.isMismatchAtReadOffset(readOffset)
+    val mismatch = isMismatchAtReadOffset(readOffset)
     // FIXME: why does empty mismatch mean it should be masked?
-    val isMasked = dbSNP.isMaskedAtReadOffset(read, readOffset) || mismatch.isEmpty
+    val isMasked = masked(baseCovarOffset) || mismatch.isEmpty
     // getOrElse because reads without an MD tag can appear during *application* of recal table
     val isMismatch = mismatch.getOrElse(false)
-    val qualityScore = read.qualityScores(readOffset)
+    val qualityScore = qualityScores(readOffset)
     readOffset += 1
     new BaseCovariates(qualCovar(baseCovarOffset), requestedCovars.map(v => v(baseCovarOffset)).toArray,
       qualityScore, isMismatch, isMasked)
