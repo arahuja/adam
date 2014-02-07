@@ -25,6 +25,8 @@ object ADAMVariantContext {
 
 case class ADAMVariantContext(variant: ADAMVariant,
                               genotypes: Seq[ADAMGenotype] = Seq(),
-                              databases: Option[ADAMDatabaseVariantAnnotation] = None) {
+                              databases: Option[ADAMDatabaseVariantAnnotation] = None,
+                              infoString : Option[String] = None
+                             ) {
 }
 
