@@ -106,27 +106,13 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    */
   def convert(vc: VariantContext): Seq[ADAMVariantContext] = {
 
-    val contig: ADAMContig.Builder = ADAMContig.newBuilder().setContigName(vc.getChr)
-    if (dict.isDefined) {
-      val sr = (dict.get)(vc.getChr)
-      contig.setReferenceLength(sr.length).setReferenceURL(sr.url).setReferenceMD5(sr.md5)
-    }
-
     // TODO: Handle multi-allelic sites
     // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
     if (!vc.isBiallelic) {
       return Seq()
     }
 
-    // VCF CHROM, POS, REF and ALT
-    val variant: ADAMVariant = ADAMVariant.newBuilder
-      .setContig(contig.build)
-      .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */)
-      .setReferenceAlleles(strToEnumList[Base](
-        vc.getReference.getBaseString).asJava)
-      .setVariantAlleles(strToEnumList[Base](
-        vc.getAlternateAllele(0).getBaseString).asJava)
-      .build
+    val variant: ADAMVariant = createVariant(vc)
 
     val shared_genotype_builder: ADAMGenotype.Builder = ADAMGenotype.newBuilder
       .setVariant(variant)
@@ -176,7 +162,30 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       genotype.build
     }).toSeq
 
-    Seq(ADAMVariantContext(variant, genotypes = genotypes))
+    Seq(ADAMVariantContext(variant, infoString = Some(""), genotypes = genotypes))
   }
 
+
+  def createVariant(vc: VariantContext): ADAMVariant = {
+    val contig: ADAMContig.Builder = ADAMContig.newBuilder().setContigName(vc.getChr)
+    if (dict.isDefined) {
+      val sr = (dict.get)(vc.getChr)
+      contig.setReferenceLength(sr.length).setReferenceURL(sr.url).setReferenceMD5(sr.md5)
+    }
+    // VCF CHROM, POS, REF and ALT
+    val variant: ADAMVariant = createVariant(contig, vc)
+    variant
+  }
+
+  def createVariant(contig: ADAMContig.Builder, vc: VariantContext): ADAMVariant = {
+    val variant: ADAMVariant = ADAMVariant.newBuilder
+      .setContig(contig.build)
+      .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */)
+      .setReferenceAlleles(strToEnumList[Base](
+        vc.getReference.getBaseString).asJava)
+      .setVariantAlleles(strToEnumList[Base](
+        vc.getAlternateAllele(0).getBaseString).asJava)
+      .build
+    variant
+  }
 }
