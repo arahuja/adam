@@ -23,8 +23,72 @@ import org.broadinstitute.variant.vcf._
 import edu.berkeley.cs.amplab.adam.util.VcfStringUtils._
 import org.broadinstitute.variant.vcf.VCFConstants
 import java.util
+import scala.Predef._
+import java.lang.Object
+import org.apache.avro.specific.SpecificRecord
+import scala._
+
+object VariantAttributeConverter {
+  def convertAttributes(record : SpecificRecord, vc: VariantContext, headerLines : Map[String,(Int,Object => Object)]): SpecificRecord = {
+    for ((v,a) <- headerLines) {
+      val attr = vc.getAttribute(v)
+      if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
+        record.put(a._1, a._2(attr))
+      }
+    }
+    record
+  }
+
+  def createFieldHeaderMap(keys : Seq[AttrKey]) : Map[String, (Int, Object => Object)] =
+  {
+    keys.map(field => {
+      var avro_field = VariantCallingAnnotations.getClassSchema.getField(field.adamKey)
+      field.vcfKey -> (avro_field.pos, field.attrConverter)
+    })(collection.breakOut)
+  }
+
+//  def apply[T <: SpecificRecord](record : SpecificRecord, vc : VariantContext, keys : Seq[AttrKey]) : SpecificRecord = {
+//     val headerLines = createFieldHeaderMap(keys)
+//     convertAttributes(record, vc, headerLines)
+//
+//  }
+
+  def apply(record : SpecificRecord, vc : VariantContext, headerLines :  Map[String, (Int, Object => Object)] ) : SpecificRecord = {
+         convertAttributes(record, vc, headerLines)
+
+      }
+
+  def attrAsInt(attr: Object):Object = attr match {
+    case a: String => java.lang.Integer.valueOf(a)
+    case a: java.lang.Integer => a
+    case a: java.lang.Number => java.lang.Integer.valueOf(a.intValue)
+  }
+  def attrAsLong(attr: Object):Object = attr match {
+    case a: String => java.lang.Integer.valueOf(a)
+    case a: java.lang.Long => a
+    case a: java.lang.Number => java.lang.Long.valueOf(a.longValue)
+  }
+  def attrAsFloat(attr: Object):Object = attr match {
+    case a: String => java.lang.Float.valueOf(a)
+    case a: java.lang.Float => a
+    case a: java.lang.Number => java.lang.Float.valueOf(a.floatValue)
+  }
+  def attrAsString(attr: Object):Object = attr match {
+    case a: String => a
+  }
+  def attrAsBoolean(attr: Object):Object = attr match {
+    case a: java.lang.Boolean => a
+    case a: String => java.lang.Boolean.valueOf(a)
+  }
+
+  case class AttrKey(adamKey: String, attrConverter: (Object => Object), hdrLine: VCFCompoundHeaderLine) {
+    val vcfKey: String = hdrLine.getID
+  }
+}
+
 
 object VariantContextConverter {
+
   private def attrAsInt(attr: Object):Object = attr match {
     case a: String => java.lang.Integer.valueOf(a)
     case a: java.lang.Integer => a
@@ -53,6 +117,7 @@ object VariantContextConverter {
   private case class AttrKey(adamKey: String, attrConverter: (Object => Object), hdrLine: VCFCompoundHeaderLine) {
     val vcfKey: String = hdrLine.getID
   }
+
 
   private val INFO_KEYS: Seq[AttrKey] = Seq(
     AttrKey("clippingRankSum", attrAsFloat _, new VCFInfoHeaderLine("ClippingRankSum", 1, VCFHeaderLineType.Float, "Z-score From Wilcoxon rank sum test of Alt vs. Ref number of hard clipped bases")),
@@ -108,6 +173,7 @@ object VariantContextConverter {
     }
     call
   }
+
 
   private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
     if (allele.isNoCall) ADAMGenotypeAllele.NoCall

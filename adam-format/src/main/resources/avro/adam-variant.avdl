@@ -79,10 +79,172 @@ record ADAMGenotype {
   boolean splitFromMultiAllelic = false;
 }
 
+record ADAMDBNSFPVariantAnnotation {
+
+    union { null, string } aaref = null;
+    union { null, string } aaalt = null;
+    union { null, int } hg18Pos1Coor = null;
+    union { null, string } genename = null;
+    union { null, string } uniprotAcc = null;
+    union { null, string } uniprotId = null;
+    union { null, string } uniprotAapos = null;
+    union { null, string } interproDomain = null;
+    union { null, string } cdsStrand = null;
+    union { null, string } refcodon = null;
+    union { null, string } slrTestStatistic = null;
+    union { null, string } codonpos = null;
+    union { null, string } foldDegenerate = null;
+    union { null, string } ancestralAllele = null;
+    union { null, string } ensemblGeneid = null;
+    union { null, string } ensemblTranscriptd = null;
+    union { null, string } aapos = null;
+    union { null, string } aaposSift = null;
+    union { null, string } aaposFathmm = null;
+    union { null, string } siftScore = null;
+    union { null, string } siftScoreConverted = null;
+    union { null, string } siftPred = null;
+    union { null, string } polyphen2HdivScore = null;
+    union { null, string } polyphen2HdivPred = null;
+    union { null, string } polyphen2HvarScore = null;
+    union { null, string } polyphen2HvarPred = null;
+    union { null, string } lrtScore = null;
+    union { null, string } lrtScoreConverted = null;
+    union { null, string } lrtPred = null;
+    union { null, string } mutationtasterScore = null;
+    union { null, string } mutationtasterScoreConverted = null;
+    union { null, string } mutationtasterPred = null;
+//    union { null, string } mutationassessorScore;
+//    union { null, string } mutationassessorScoreConverted;
+//    union { null, string } mutationassessorPred;
+//    union { null, string } fathmmScore;
+//    union { null, string } fathmmScoreConverted;
+//    union { null, string } fathmmPred;
+//    union { null, string } radialsvmScore;
+//    union { null, string } radialsvmScoreConverted;
+//    union { null, string } radialsvmPred;
+//    union { null, string } lrScore;
+    union { null, string } lrPred  = null;
+    union { null, string } reliabilityIndex  = null;
+    union { null, string } gerpNr  = null;
+    union { null, string } gerpRs  = null;
+    union { null, float } phylop  = null;
+    union { null, string } wayPi  = null;
+    union { null, string } wayLogodds = null;
+    union { null, string } lrtOmega = null;
+    union { null, string } unisnpIds  = null;
+    union { null, string } thousandgp1Ac = null;
+    union { null, string } thousandgp1Af = null;
+    union { null, string } thousandgp1AfrAc = null;
+    union { null, string } thousandgp1AfrAf = null;
+    union { null, string } thousandgp1EurAc = null;
+    union { null, string } thousandgp1EurAf = null;
+    union { null, string } thousandgp1AmrAc = null;
+    union { null, string } thousandgp1AmrAf = null;
+    union { null, string } thousandgp1AsnAc  = null;
+    union { null, string } thousandgp1AsnAf  = null;
+    union { null, string } esp6500AaAf  = null;
+    union { null, string } esp6500EaAf  = null;
+}
+
+record ADAMClinvarVariantAnnotation {
+    union { null, int } alleleid  = null;
+    union { null, string } type  = null;
+    union { null, string } name  = null;
+    union { null, int } geneId  = null;
+    union { null, string } geneSymbol  = null;
+    union { null, string } clinicalSignificance  = null;
+    union { null, int } rsDbsnp  = null;
+    union { null, string } nsvDbvar  = null;
+    union { null, string } rcvaccession  = null;
+    union { null, string } testedingtr  = null;
+    union { null, string } phenotypeids  = null;
+    union { null, string } origin  = null;
+    union { null, string } cytogenetic  = null;
+    union { null, string } reviewstatus  = null;
+    union { null, string } hgvsC  = null;
+    union { null, string } hgvs  = null;
+    union { null, int } numbersubmitters  = null;
+    union { null, string } lastevaluated  = null;
+    union { null, string } guidelines  = null;
+    union { null, string } otherids  = null;
+
+}
+
+record ADAMOMIMVariantAnnotation {
+
+    union {null, string} omimId  = null;
+
+}
+
+record ADAMSnpEffVariantAnnotation {
+
+    union {null, string} effect = null;
+    union {null, string} impact = null;
+    union {null, string} functionalClass = null;
+    union {null, string} codonChange = null;
+    union {null, string} aminoAcidChange = null;
+    union {null, string} geneName = null;
+    union {null, string} geneBiotype = null;
+    union {null, string} coding = null;
+    union {null, string} transcriptID = null;
+    union {null, string} exonID = null;
+
+}
+
+record ADAMClinvarVariantAnnotation {
+    union { null, int } alleleid  = null;
+    union { null, string } type  = null;
+    union { null, string } name  = null;
+    union { null, int } geneId  = null;
+    union { null, string } geneSymbol  = null;
+    union { null, string } clinicalSignificance  = null;
+    union { null, int } rsDbsnp  = null;
+    union { null, string } nsvDbvar  = null;
+    union { null, string } rcvaccession  = null;
+    union { null, string } testedingtr  = null;
+    union { null, string } phenotypeids  = null;
+    union { null, string } origin  = null;
+    union { null, string } cytogenetic  = null;
+    union { null, string } reviewstatus  = null;
+    union { null, string } hgvsC  = null;
+    union { null, string } hgvs  = null;
+    union { null, int } numbersubmitters  = null;
+    union { null, string } lastevaluated  = null;
+    union { null, string } guidelines  = null;
+    union { null, string } otherids  = null;
+
+}
+
+record ADAMOMIMVariantAnnotation {
+
+    union {null, string} omimId  = null;
+
+}
+
+record ADAMSnpEffVariantAnnotation {
+
+    union {null, string} effect = null;
+    union {null, string} impact = null;
+    union {null, string} functionalClass = null;
+    union {null, string} codonChange = null;
+    union {null, string} aminoAcidChange = null;
+    union {null, string} geneName = null;
+    union {null, string} geneBiotype = null;
+    union {null, string} coding = null;
+    union {null, string} transcriptID = null;
+    union {null, string} exonID = null;
+
+}
+
 record ADAMDatabaseVariantAnnotation {
   union { null, ADAMVariant } variant;
 
   union { null, int } dbsnpId = null;
+
+  union { null, ADAMClinvarVariantAnnotation } clinvar = null;
+  union { null, ADAMOMIMVariantAnnotation } omim = null;
+  union { null, ADAMSnpEffVariantAnnotation } snpeff = null;
+  union { null, ADAMSnpEffVariantAnnotation } dbnsfp = null;
 }
 
 
