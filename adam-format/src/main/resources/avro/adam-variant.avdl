@@ -146,35 +146,6 @@ record ADAMDBNSFPVariantAnnotation {
     union { null, string } esp6500EaAf  = null;
 }
 
-record ADAMClinvarVariantAnnotation {
-    union { null, int } alleleid  = null;
-    union { null, string } type  = null;
-    union { null, string } name  = null;
-    union { null, int } geneId  = null;
-    union { null, string } geneSymbol  = null;
-    union { null, string } clinicalSignificance  = null;
-    union { null, int } rsDbsnp  = null;
-    union { null, string } nsvDbvar  = null;
-    union { null, string } rcvaccession  = null;
-    union { null, string } testedingtr  = null;
-    union { null, string } phenotypeids  = null;
-    union { null, string } origin  = null;
-    union { null, string } cytogenetic  = null;
-    union { null, string } reviewstatus  = null;
-    union { null, string } hgvsC  = null;
-    union { null, string } hgvs  = null;
-    union { null, int } numbersubmitters  = null;
-    union { null, string } lastevaluated  = null;
-    union { null, string } guidelines  = null;
-    union { null, string } otherids  = null;
-
-}
-
-record ADAMOMIMVariantAnnotation {
-
-    union {null, string} omimId  = null;
-
-}
 
 record ADAMSnpEffVariantAnnotation {
 
@@ -244,7 +215,7 @@ record ADAMDatabaseVariantAnnotation {
   union { null, ADAMClinvarVariantAnnotation } clinvar = null;
   union { null, ADAMOMIMVariantAnnotation } omim = null;
   union { null, ADAMSnpEffVariantAnnotation } snpeff = null;
-  union { null, ADAMSnpEffVariantAnnotation } dbnsfp = null;
+  union { null, ADAMDBNSFPVariantAnnotation } dbnsfp = null;
 }
 
 
